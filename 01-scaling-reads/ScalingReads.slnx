@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/ScalingReads/ScalingReads.csproj" />
+  <Project Path="tests/ScalingReads.Tests/ScalingReads.Tests.csproj" />
+</Solution>
