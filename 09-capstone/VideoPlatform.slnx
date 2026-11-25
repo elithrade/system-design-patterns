@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/VideoPlatform/VideoPlatform.csproj" />
+  <Project Path="tests/VideoPlatform.Tests/VideoPlatform.Tests.csproj" />
+</Solution>
