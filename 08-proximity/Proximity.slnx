@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Proximity/Proximity.csproj" />
+  <Project Path="tests/Proximity.Tests/Proximity.Tests.csproj" />
+</Solution>

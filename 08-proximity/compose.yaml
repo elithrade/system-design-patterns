@@ -1,0 +1,36 @@
+# Lab 8 infrastructure: Postgres with PostGIS (drivers) and Redis (stages 3-4).
+# The app runs on the host with `dotnet run` (see README.md).
+#
+#   docker compose up -d --wait
+services:
+  postgres:
+    image: postgis/postgis:17-3.6
+    environment:
+      POSTGRES_DB: rides
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "56132:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./db:/db:ro
+    # jit=off: the planner underestimates how many rows ST_DWithin matches, prices the query
+    # high, and JIT-compiles every search, adding 3-100 ms (README.md, stage 2)
+    command: ["postgres", "-c", "max_connections=300", "-c", "shared_buffers=512MB", "-c", "jit=off"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d rides"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7
+    ports:
+      - "57079:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  postgres:
