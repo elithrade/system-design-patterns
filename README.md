@@ -16,16 +16,16 @@ One lab per pattern from Hello Interview's [8 Patterns to Pass Your System Desig
 | # | Pattern | Lab | What breaks | Stages | Status |
 |---|---|---|---|---|---|
 | 1 | Scaling reads | Instagram-style profiles and posts, 2M posts | Full scans, likes counted per read, replica lag, one hot key | index + denormalize → replica + read-your-writes → Redis + invalidation → in-process cache for hot keys | ready |
-| 2 | Scaling writes | View/like counters | One hot row serializes writes; a burst that never ends | batching → sharded counters → hash partitioning over 3 Postgres → queue + load shedding, then sustained overload to show "a queue only buys you time" | |
-| 3 | Dealing with contention | Flash sale: 100 seats, 5,000 buyers | Read-then-write oversells | conditional update → `SELECT FOR UPDATE` → optimistic version column → Redis seat hold with TTL; then split seats and payments across 2 databases and watch the single-DB fixes stop working | |
-| 4 | Large blobs | File upload service on MinIO | A 2 GB upload through the API | presigned PUT → multipart/resumable → bucket notifications update metadata → orphan cleanup → signed downloads | |
-| 5 | Long-running tasks | "Stride" year-in-review PDF | nginx cuts the request at 30 s | job queue + job ID → `SKIP LOCKED` workers → worker crash and retries → dead-letter queue; plus a 200 ms job, sync vs queued | |
-| 6 | Realtime updates | Live auction bids | Polling load; a second instance misses bids | polling → long polling → SSE → WebSocket → Redis pub/sub across instances → reconnect with `Last-Event-ID` | |
-| 7 | Multi-step processes | Checkout: payment, inventory, shipping, with injected failures | Half-done orders | idempotency keys → hand-rolled saga with compensations → the same workflow in Temporal, compared | |
-| 8 | Proximity search | Nearby drivers, 1M points | Haversine scan over every row | geohash prefix column → PostGIS GiST → Redis `GEOSEARCH` → location updates every 3 s; scan vs index at 1k/100k/1M rows | |
-| 9 | Capstone | Mini video platform | | presigned upload (4) → transcode job (5) → SSE progress bar (6) → Temporal workflow from upload to publish (7) | |
+| 2 | Scaling writes | View/like counters | One hot row serializes writes; a burst that never ends | batching → sharded counters → hash partitioning over 3 Postgres → queue + load shedding, then sustained overload to show "a queue only buys you time" | ready |
+| 3 | Dealing with contention | Flash sale: 100 seats, 5,000 buyers | Read-then-write oversells | conditional update → `SELECT FOR UPDATE` → optimistic version column → Redis seat hold with TTL; then split seats and payments across 2 databases and watch the single-DB fixes stop working | ready |
+| 4 | Large blobs | File upload service on MinIO | A 2 GB upload through the API | presigned PUT → multipart/resumable → bucket notifications update metadata → orphan cleanup → signed downloads | ready |
+| 5 | Long-running tasks | "Stride" year-in-review PDF | nginx cuts the request at 30 s | job queue + job ID → `SKIP LOCKED` workers → worker crash and retries → dead-letter queue; plus a 200 ms job, sync vs queued | ready |
+| 6 | Realtime updates | Live auction bids | Polling load; a second instance misses bids | polling → long polling → SSE → WebSocket → Redis pub/sub across instances → reconnect with `Last-Event-ID` | ready |
+| 7 | Multi-step processes | Checkout: payment, inventory, shipping, with injected failures | Half-done orders | idempotency keys → hand-rolled saga with compensations → the same workflow in Temporal, compared | ready |
+| 8 | Proximity search | Nearby drivers, 1M points | Haversine scan over every row | geohash prefix column → PostGIS GiST → Redis `GEOSEARCH` → location updates every 3 s; scan vs index at 1k/100k/1M rows | ready |
+| 9 | Capstone | Mini video platform | Upload through the API and transcoding inside the request | presigned upload (4) → transcode job (5) → SSE progress bar (6) → Temporal workflow from upload to publish (7) | ready |
 
-Labs 2-9 are scaffolded when you reach them, in the same shape as lab 1, adjusted by what lab 1 taught about stage size.
+Folders: `01-scaling-reads`, `02-scaling-writes`, `03-contention`, `04-large-blobs`, `05-long-running`, `06-realtime`, `07-multi-step`, `08-proximity`, `09-capstone`. Each lab has its own ports, so their compose stacks can run side by side.
 
 ## Each lab
 
