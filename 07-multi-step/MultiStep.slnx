@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/MultiStep/MultiStep.csproj" />
+  <Project Path="tests/MultiStep.Tests/MultiStep.Tests.csproj" />
+</Solution>
