@@ -166,6 +166,30 @@ EF fixes: a concurrency token (Npgsql can use the `xmin` system column) that mak
 - Every like writes two rows: the `likes` row and the `posts` row.
 - Every like on the same post updates the same row and queues on its lock. Fine at this lab's rates. A celebrity post taking thousands of likes a second makes that row the bottleneck (lab 2).
 
+## SQL or C#: where each fix lives
+
+Anything about how Postgres finds and changes rows lives in the database (schema and SQL). Anything about how often the app asks lives in C#.
+
+Only the database can fix:
+
+- **Indexes.** No C# makes Postgres find rows faster. EF's `HasIndex` still produces a `CREATE INDEX` in a migration.
+- **Query shape:** what's counted, joined, returned. C# decides it, as LINQ or as SQL, but Postgres does the work. With EF: write the LINQ, check the SQL (`ToQueryString`), check the plan, reshape the LINQ until the plan is cheap.
+- **Correctness under concurrency.** "Insert, and increment only if it went in" is safest as one statement, run under Postgres's row locks. The C# version (transaction, insert, check rows affected, update) works, but the logic spans two round trips.
+
+C# fixes:
+
+- **Asking less often:** caching (stages 3 and 4), batching writes (lab 2).
+- **Fewer round trips:** N+1. Loading 20 posts and then querying each post's likes separately is 21 queries where 1 would do. In EF it comes from lazy loading or a `foreach` touching a navigation property. Fix: project everything in one query.
+- **Less work per query in EF:** `AsNoTracking()` for reads, `Select` into a DTO instead of loading whole entities.
+
+Common practice in .NET teams: EF for ordinary CRUD, raw SQL on hot paths and wherever LINQ can't express the statement, through `FromSql`/`ExecuteSql` or Dapper alongside EF. The `Like` statement is a typical case: `ON CONFLICT DO NOTHING` and `RETURNING` inside `WITH` have no LINQ form, so an EF codebase would run this exact SQL with `ExecuteSqlAsync`.
+
+A third place for keeping a counter right is a **trigger**: a function on `likes` that adds 1 to `posts.like_count` after each insert.
+
+- For: the count stays right whoever writes to `likes`, including other services, scripts and a manual `INSERT` in psql.
+- Against: the logic is invisible from C# (reading `LikeAsync` doesn't tell you the count changes), and every insert pays the trigger's cost.
+- Teams sharing one database across several services lean toward triggers. When one app owns the database, the logic usually stays in the app's SQL.
+
 ## Load test: why cheap requests were slow
 
 Baseline, `k6 run -e RATE=300 k6/reads.js`:
