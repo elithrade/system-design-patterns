@@ -8,7 +8,9 @@ public static class Migrator
 {
     public static string MigrationsDirectory => Path.Combine(AppContext.BaseDirectory, "db", "migrations");
 
-    public static async Task ApplyAsync(NpgsqlDataSource db, ILogger? logger = null, CancellationToken ct = default)
+    // upTo: apply only files whose name sorts at or before it (the tests use this to seed between
+    // the baseline and your migrations). Null applies everything.
+    public static async Task ApplyAsync(NpgsqlDataSource db, ILogger? logger = null, CancellationToken ct = default, string? upTo = null)
     {
         await using var conn = await db.OpenConnectionAsync(ct);
         await Exec(conn, null, """
@@ -20,6 +22,10 @@ public static class Migrator
         foreach (var file in Directory.GetFiles(MigrationsDirectory, "*.sql").Order(StringComparer.Ordinal))
         {
             var name = Path.GetFileName(file);
+            if (upTo is not null && StringComparer.Ordinal.Compare(name, upTo) > 0)
+            {
+                break;
+            }
             await using var tx = await conn.BeginTransactionAsync(ct);
             // one migrator at a time, if several instances start together
             await Exec(conn, tx, "SELECT pg_advisory_xact_lock(4242)", ct);

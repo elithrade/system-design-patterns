@@ -36,13 +36,26 @@ public sealed class InfraFixture : IAsyncLifetime
         var template = ConnectionString(Template);
         await using (var db = NpgsqlDataSource.Create(template))
         {
+            // The same order as the compose database (README, "Setup"): the baseline schema, then
+            // the seed, then your migrations on top of data that already exists. Seeding after your
+            // migrations would let seed.sql fill in like_count, and a migration that leaves
+            // existing posts at 0 would pass.
+            await Migrator.ApplyAsync(db, upTo: "001_baseline.sql");
+            await using (var conn = await db.OpenConnectionAsync())
+            {
+                var seed = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "db", "seed.sql"));
+                await new NpgsqlCommand(seed, conn).ExecuteNonQueryAsync();
+                await new NpgsqlCommand(
+                    $"CALL seed({Users}, {Posts}, 100000, {Celebrities}, {CelebrityLikes})", conn)
+                { CommandTimeout = 300 }.ExecuteNonQueryAsync();
+            }
             await Migrator.ApplyAsync(db);
-            await using var conn = await db.OpenConnectionAsync();
-            var seed = await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "db", "seed.sql"));
-            await new NpgsqlCommand(seed, conn).ExecuteNonQueryAsync();
-            await new NpgsqlCommand(
-                $"CALL seed({Users}, {Posts}, 100000, {Celebrities}, {CelebrityLikes})", conn)
-            { CommandTimeout = 300 }.ExecuteNonQueryAsync();
+            // fresh planner statistics after your migrations, so the plan tests don't depend on
+            // when autovacuum gets round to it
+            await using (var conn = await db.OpenConnectionAsync())
+            {
+                await new NpgsqlCommand("ANALYZE", conn) { CommandTimeout = 300 }.ExecuteNonQueryAsync();
+            }
         }
         // CREATE DATABASE ... TEMPLATE fails while anyone is connected to the template
         NpgsqlConnection.ClearAllPools();
