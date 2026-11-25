@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Realtime</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- the app applies these at startup; the tests apply them to their databases -->
+    <None Include="..\..\db\migrations\*.sql" Link="db\migrations\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\db\seed.sql" Link="db\seed.sql" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.100" />
+    <PackageReference Include="Npgsql" Version="11.0.0" />
+    <PackageReference Include="StackExchange.Redis" Version="3.4.35" />
+  </ItemGroup>
+</Project>

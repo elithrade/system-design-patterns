@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Realtime/Realtime.csproj" />
+  <Project Path="tests/Realtime.Tests/Realtime.Tests.csproj" />
+</Solution>
