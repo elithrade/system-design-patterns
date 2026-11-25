@@ -7,7 +7,7 @@ public static class PostQueries
     // Counts the likes table for every post on the page.
     public const string UserPosts = """
         SELECT p.id, p.author_id, u.name AS author_name, p.caption, p.created_at,
-               (SELECT count(*) FROM likes l WHERE l.post_id = p.id) AS like_count
+               p.like_count AS like_count
         FROM posts p
         JOIN users u ON u.id = p.author_id
         WHERE p.author_id = @userId
@@ -17,14 +17,14 @@ public static class PostQueries
 
     public const string Post = """
         SELECT p.id, p.author_id, u.name AS author_name, p.caption, p.created_at,
-               (SELECT count(*) FROM likes l WHERE l.post_id = p.id) AS like_count
+               p.like_count AS like_count
         FROM posts p
         JOIN users u ON u.id = p.author_id
         WHERE p.id = @id
         """;
 
     public const string LikeCount = """
-        SELECT count(*) FROM likes WHERE post_id = @id
+        SELECT like_count FROM posts WHERE id = @id
         """;
 
     public const string CreatePost = """
@@ -34,7 +34,11 @@ public static class PostQueries
 
     // Returns 1 if the like is new, 0 if this user had already liked the post.
     public const string Like = """
-        INSERT INTO likes (post_id, user_id) VALUES (@postId, @userId)
-        ON CONFLICT DO NOTHING
+        WITH new_like AS (
+            INSERT INTO likes (post_id, user_id) VALUES (@postId, @userId)
+            ON CONFLICT DO NOTHING RETURNING post_id
+        )
+        UPDATE posts SET like_count = like_count + 1
+        WHERE id IN (SELECT post_id from new_like)
         """;
 }
