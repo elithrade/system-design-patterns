@@ -1,0 +1,54 @@
+# Lab 2 infrastructure: the main Postgres, and three more that stage 3 partitions view counts over.
+# The app runs on the host with `dotnet run` (see README.md), so every service publishes a port.
+#
+#   docker compose up -d --wait
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: videos
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "55532:5432"
+    volumes:
+      - main:/var/lib/postgresql/data
+      - ./db:/db:ro
+    command: ["postgres", "-c", "shared_buffers=128MB", "-c", "max_connections=300"]
+    healthcheck: &healthcheck
+      test: ["CMD-SHELL", "pg_isready -U postgres -d videos"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # Stage 3: three independent databases. Each holds the view counts of the videos that hash to it.
+  partition0: &partition
+    image: postgres:17
+    environment:
+      POSTGRES_DB: videos
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "55533:5432"
+    volumes:
+      - partition0:/var/lib/postgresql/data
+    command: ["postgres", "-c", "shared_buffers=64MB", "-c", "max_connections=300"]
+    healthcheck: *healthcheck
+
+  partition1:
+    <<: *partition
+    ports:
+      - "55534:5432"
+    volumes:
+      - partition1:/var/lib/postgresql/data
+
+  partition2:
+    <<: *partition
+    ports:
+      - "55535:5432"
+    volumes:
+      - partition2:/var/lib/postgresql/data
+
+volumes:
+  main:
+  partition0:
+  partition1:
+  partition2:

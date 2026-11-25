@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/ScalingWrites/ScalingWrites.csproj" />
+  <Project Path="tests/ScalingWrites.Tests/ScalingWrites.Tests.csproj" />
+</Solution>
