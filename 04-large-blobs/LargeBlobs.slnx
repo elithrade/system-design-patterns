@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/LargeBlobs/LargeBlobs.csproj" />
+  <Project Path="tests/LargeBlobs.Tests/LargeBlobs.Tests.csproj" />
+</Solution>
