@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/Contention/Contention.csproj" />
+  <Project Path="tests/Contention.Tests/Contention.Tests.csproj" />
+</Solution>

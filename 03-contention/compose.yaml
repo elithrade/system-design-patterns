@@ -1,0 +1,53 @@
+# Lab 3 infrastructure: the sales database, a separate payments database (the last section of the
+# README), and Redis for seat holds (stage 4).
+# The app runs on the host with `dotnet run` (see README.md), so every service publishes a port.
+#
+#   docker compose up -d --wait
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: sales
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "55632:5432"
+    volumes:
+      - sales:/var/lib/postgresql/data
+      - ./db:/db:ro
+    command: ["postgres", "-c", "max_connections=300"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sales"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  payments:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "55633:5432"
+    volumes:
+      - payments:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d payments"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # holds live here and nowhere else: no persistence
+  redis:
+    image: redis:7
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "56579:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  sales:
+  payments:
